@@ -1,0 +1,716 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>AI Calling Agent — Customer Support</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg:        #0f172a;
+      --surface:   #1e293b;
+      --surface2:  #273549;
+      --border:    #334155;
+      --primary:   #38bdf8;
+      --primary-d: #0284c7;
+      --user-bg:   #0ea5e9;
+      --agent-bg:  #334155;
+      --text:      #e2e8f0;
+      --muted:     #94a3b8;
+      --danger:    #ef4444;
+      --success:   #22c55e;
+      --warn:      #f59e0b;
+      --teal:      #0d9488;
+      --radius:    14px;
+    }
+
+    body {
+      font-family: 'Segoe UI', system-ui, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 28px 16px 40px;
+    }
+
+    /* ── Header ── */
+    .header {
+      text-align: center;
+      margin-bottom: 24px;
+    }
+    .header-icon {
+      font-size: 2.8rem;
+      line-height: 1;
+      margin-bottom: 8px;
+    }
+    .header h1 {
+      font-size: 1.6rem;
+      font-weight: 700;
+      color: var(--primary);
+      letter-spacing: -0.3px;
+    }
+    .header p {
+      color: var(--muted);
+      font-size: 0.85rem;
+      margin-top: 4px;
+    }
+
+    /* ── Status pill ── */
+    .status-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: 999px;
+      padding: 4px 12px;
+      font-size: 0.78rem;
+      color: var(--muted);
+      margin-top: 10px;
+    }
+    .status-pill .dot {
+      width: 7px; height: 7px;
+      border-radius: 50%;
+      background: var(--success);
+      animation: blink 2s infinite;
+    }
+    @keyframes blink { 0%,100%{opacity:1} 50%{opacity:0.3} }
+
+    /* ── Main card ── */
+    .card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      width: 100%;
+      max-width: 700px;
+      overflow: hidden;
+      box-shadow: 0 8px 32px rgba(0,0,0,0.5);
+    }
+
+    /* ── Card header bar ── */
+    .card-header {
+      background: var(--surface2);
+      border-bottom: 1px solid var(--border);
+      padding: 12px 18px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+    }
+    .card-header-left {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .avatar {
+      width: 36px; height: 36px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, var(--primary), #6366f1);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 1.1rem;
+      flex-shrink: 0;
+    }
+    .agent-info .name { font-weight: 600; font-size: 0.92rem; }
+    .agent-info .sub  { font-size: 0.75rem; color: var(--muted); }
+
+    .session-badge {
+      font-size: 0.72rem;
+      color: var(--muted);
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 3px 8px;
+    }
+
+    /* ── Chat window ── */
+    #chat-window {
+      height: 400px;
+      overflow-y: auto;
+      padding: 18px 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    #chat-window::-webkit-scrollbar { width: 4px; }
+    #chat-window::-webkit-scrollbar-track { background: transparent; }
+    #chat-window::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; }
+
+    /* ── Messages ── */
+    .msg-row {
+      display: flex;
+      align-items: flex-end;
+      gap: 8px;
+    }
+    .msg-row.user  { flex-direction: row-reverse; }
+    .msg-row.agent { flex-direction: row; }
+
+    .msg-avatar {
+      width: 28px; height: 28px;
+      border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 0.85rem;
+      flex-shrink: 0;
+    }
+    .msg-row.agent .msg-avatar { background: linear-gradient(135deg, var(--primary), #6366f1); }
+    .msg-row.user  .msg-avatar { background: var(--user-bg); }
+
+    .msg-bubble {
+      max-width: 72%;
+      padding: 10px 14px;
+      border-radius: 14px;
+      font-size: 0.9rem;
+      line-height: 1.55;
+      word-break: break-word;
+    }
+    .msg-row.user  .msg-bubble {
+      background: var(--user-bg);
+      color: #fff;
+      border-bottom-right-radius: 4px;
+    }
+    .msg-row.agent .msg-bubble {
+      background: var(--agent-bg);
+      color: var(--text);
+      border-bottom-left-radius: 4px;
+    }
+
+    .msg-meta {
+      font-size: 0.7rem;
+      color: var(--muted);
+      margin-top: 5px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      flex-wrap: wrap;
+    }
+    .msg-row.user  .msg-meta { justify-content: flex-end; }
+    .msg-row.agent .msg-meta { justify-content: flex-start; }
+
+    .intent-tag {
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      padding: 1px 6px;
+      font-size: 0.68rem;
+      color: var(--primary);
+    }
+    .escalate-tag {
+      background: rgba(239,68,68,0.15);
+      border: 1px solid var(--danger);
+      border-radius: 4px;
+      padding: 1px 6px;
+      font-size: 0.68rem;
+      color: var(--danger);
+    }
+    .voice-tag {
+      background: rgba(99,102,241,0.15);
+      border: 1px solid #6366f1;
+      border-radius: 4px;
+      padding: 1px 6px;
+      font-size: 0.68rem;
+      color: #a5b4fc;
+    }
+
+    /* ── Typing indicator ── */
+    .typing-indicator {
+      display: none;
+      align-items: flex-end;
+      gap: 8px;
+    }
+    .typing-indicator.visible { display: flex; }
+    .typing-dots {
+      background: var(--agent-bg);
+      border-radius: 14px;
+      border-bottom-left-radius: 4px;
+      padding: 10px 16px;
+      display: flex;
+      gap: 4px;
+      align-items: center;
+    }
+    .typing-dots span {
+      width: 6px; height: 6px;
+      border-radius: 50%;
+      background: var(--muted);
+      animation: bounce 1.2s infinite;
+    }
+    .typing-dots span:nth-child(2) { animation-delay: 0.2s; }
+    .typing-dots span:nth-child(3) { animation-delay: 0.4s; }
+    @keyframes bounce {
+      0%,60%,100% { transform: translateY(0); }
+      30%          { transform: translateY(-6px); }
+    }
+
+    /* ── Input area ── */
+    .input-area {
+      border-top: 1px solid var(--border);
+      padding: 14px 16px;
+      background: var(--surface);
+    }
+
+    .input-row {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+    }
+
+    #text-input {
+      flex: 1;
+      padding: 11px 16px;
+      border-radius: 10px;
+      border: 1px solid var(--border);
+      background: var(--bg);
+      color: var(--text);
+      font-size: 0.92rem;
+      outline: none;
+      transition: border-color 0.2s;
+    }
+    #text-input:focus { border-color: var(--primary); }
+    #text-input::placeholder { color: var(--muted); }
+
+    .btn {
+      padding: 11px 18px;
+      border: none;
+      border-radius: 10px;
+      cursor: pointer;
+      font-size: 0.88rem;
+      font-weight: 600;
+      transition: opacity 0.15s, transform 0.1s, background 0.15s;
+      white-space: nowrap;
+    }
+    .btn:active  { transform: scale(0.96); }
+    .btn:disabled { opacity: 0.4; cursor: not-allowed; }
+
+    .btn-send { background: var(--primary); color: #0f172a; }
+    .btn-send:hover:not(:disabled) { background: var(--primary-d); color: #fff; }
+
+    .btn-mic  { background: #6366f1; color: #fff; min-width: 44px; font-size: 1rem; }
+    .btn-mic.recording { background: var(--danger); animation: pulse 1s infinite; }
+    @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.55} }
+
+    /* ── Bottom controls ── */
+    .controls {
+      display: flex;
+      gap: 8px;
+      margin-top: 10px;
+    }
+    .btn-reset   { background: var(--surface2); color: var(--text); border: 1px solid var(--border); flex: 1; }
+    .btn-summary { background: var(--teal);     color: #fff; flex: 1; }
+    .btn-reset:hover   { background: var(--border); }
+    .btn-summary:hover { opacity: 0.85; }
+
+    /* ── Audio player ── */
+    #audio-player {
+      width: 100%;
+      margin-top: 10px;
+      display: none;
+      border-radius: 8px;
+      accent-color: var(--primary);
+    }
+
+    /* ── Status bar ── */
+    #status-bar {
+      font-size: 0.76rem;
+      color: var(--muted);
+      text-align: center;
+      margin-top: 8px;
+      min-height: 16px;
+    }
+
+    /* ── Responsive ── */
+    @media (max-width: 480px) {
+      .msg-bubble { max-width: 88%; }
+      .btn { padding: 10px 12px; font-size: 0.82rem; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- Header -->
+<div class="header">
+  <div class="header-icon">🤖</div>
+  <h1>AI Calling Agent</h1>
+  <p>Customer Support · Powered by AI</p>
+  <div class="status-pill">
+    <span class="dot"></span>
+    <span id="online-status">Connecting…</span>
+  </div>
+</div>
+
+<!-- Chat Card -->
+<div class="card">
+
+  <!-- Card Header -->
+  <div class="card-header">
+    <div class="card-header-left">
+      <div class="avatar">🤖</div>
+      <div class="agent-info">
+        <div class="name">Support Agent</div>
+        <div class="sub">AI Customer Support</div>
+      </div>
+    </div>
+    <div class="session-badge" id="session-label">Session: —</div>
+  </div>
+
+  <!-- Messages -->
+  <div id="chat-window">
+    <div class="typing-indicator" id="typing">
+      <div class="msg-avatar">🤖</div>
+      <div class="typing-dots">
+        <span></span><span></span><span></span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Input -->
+  <div class="input-area">
+    <div class="input-row">
+      <input
+        id="text-input"
+        type="text"
+        placeholder="Type your message…"
+        autocomplete="off"
+        aria-label="Message input"
+      />
+      <button class="btn btn-send" id="send-btn" onclick="sendText()" aria-label="Send message">
+        Send ➤
+      </button>
+      <button
+        class="btn btn-mic"
+        id="mic-btn"
+        title="Hold to record voice"
+        aria-label="Hold to record voice"
+      >🎙</button>
+    </div>
+
+    <div class="controls">
+      <button class="btn btn-reset"   onclick="resetSession()">🔄 New Call</button>
+      <button class="btn btn-summary" onclick="fetchSummary()">📋 Summary</button>
+    </div>
+
+    <audio id="audio-player" controls></audio>
+    <div id="status-bar"></div>
+  </div>
+</div>
+
+<script>
+  // ── Session ────────────────────────────────────────────────────────────────
+  const SESSION_ID = "sess-" + Math.random().toString(36).slice(2, 9);
+  document.getElementById("session-label").textContent = "Session: " + SESSION_ID.slice(5);
+
+  // ── DOM refs ───────────────────────────────────────────────────────────────
+  const chatWindow   = document.getElementById("chat-window");
+  const textInput    = document.getElementById("text-input");
+  const sendBtn      = document.getElementById("send-btn");
+  const micBtn       = document.getElementById("mic-btn");
+  const audioEl      = document.getElementById("audio-player");
+  const statusBar    = document.getElementById("status-bar");
+  const typingEl     = document.getElementById("typing");
+  const onlineStatus = document.getElementById("online-status");
+
+  // ── State ──────────────────────────────────────────────────────────────────
+  let mediaRecorder = null;
+  let audioChunks   = [];
+  let isBusy        = false;
+
+  // ── Helpers ────────────────────────────────────────────────────────────────
+  const setStatus = (msg) => { statusBar.textContent = msg; };
+
+  const escHtml = (s) =>
+    s.replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");
+
+  function showTyping()  { typingEl.classList.add("visible");    chatWindow.scrollTop = chatWindow.scrollHeight; }
+  function hideTyping()  { typingEl.classList.remove("visible"); }
+
+  function setBusy(val) {
+    isBusy = val;
+    sendBtn.disabled = val;
+    textInput.disabled = val;
+  }
+
+  function addMessage(text, role, { intent = "", escalate = false, turn = null, voice = false } = {}) {
+    const row = document.createElement("div");
+    row.className = `msg-row ${role}`;
+
+    const avatarEl = document.createElement("div");
+    avatarEl.className = "msg-avatar";
+    avatarEl.textContent = role === "agent" ? "🤖" : "👤";
+
+    const bubble = document.createElement("div");
+    bubble.className = "msg-bubble";
+    bubble.textContent = text;
+
+    // Meta tags
+    const metaTags = [];
+    if (turn)    metaTags.push(`Turn ${turn}`);
+    if (intent)  metaTags.push(`<span class="intent-tag">${escHtml(intent)}</span>`);
+    if (escalate) metaTags.push(`<span class="escalate-tag">⚠ Escalated</span>`);
+    if (voice)   metaTags.push(`<span class="voice-tag">🎙 Voice</span>`);
+
+    if (metaTags.length) {
+      const meta = document.createElement("div");
+      meta.className = "msg-meta";
+      meta.innerHTML = metaTags.join(" ");
+      bubble.appendChild(meta);
+    }
+
+    row.appendChild(avatarEl);
+    row.appendChild(bubble);
+
+    // Insert before typing indicator
+    chatWindow.insertBefore(row, typingEl);
+    chatWindow.scrollTop = chatWindow.scrollHeight;
+  }
+
+  function playAudio(b64) {
+    audioEl.src = "data:audio/mp3;base64," + b64;
+    audioEl.style.display = "block";
+    audioEl.play().catch(() => {});
+  }
+
+  // ── TTS helper ─────────────────────────────────────────────────────────────
+  async function speakText(text) {
+    try {
+      const res = await fetch("/voice/tts", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ text }),
+      });
+      if (!res.ok) return;
+      const data = await res.json();
+      if (data.audio_base64) playAudio(data.audio_base64);
+    } catch (_) { /* TTS optional — silent fail */ }
+  }
+
+  // ── Text Chat ──────────────────────────────────────────────────────────────
+  async function sendText() {
+    const text = textInput.value.trim();
+    if (!text || isBusy) return;
+
+    textInput.value = "";
+    addMessage(text, "user");
+    setBusy(true);
+    showTyping();
+    setStatus("Agent is thinking…");
+
+    try {
+      const res = await fetch("/chat", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ text, session_id: SESSION_ID }),
+      });
+
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const data = await res.json();
+
+      hideTyping();
+      addMessage(data.response, "agent", {
+        intent: data.intent,
+        escalate: data.escalate,
+        turn: data.turn,
+      });
+      setStatus("Ready");
+      await speakText(data.response);
+    } catch (e) {
+      hideTyping();
+      addMessage("Sorry, I couldn't connect to the server. Please try again.", "agent");
+      setStatus("Connection error");
+    } finally {
+      setBusy(false);
+      textInput.focus();
+    }
+  }
+
+  // ── Voice Recording ────────────────────────────────────────────────────────
+  micBtn.addEventListener("mousedown",  startRecording);
+  micBtn.addEventListener("touchstart", startRecording, { passive: true });
+  micBtn.addEventListener("mouseup",    stopRecording);
+  micBtn.addEventListener("touchend",   stopRecording);
+  // Safety: stop if mouse leaves button while held
+  micBtn.addEventListener("mouseleave", () => {
+    if (mediaRecorder && mediaRecorder.state === "recording") stopRecording();
+  });
+
+  function getBestMimeType() {
+    const types = [
+      "audio/webm;codecs=opus",
+      "audio/webm",
+      "audio/ogg;codecs=opus",
+      "audio/ogg",
+      "audio/mp4",
+    ];
+    for (const t of types) {
+      if (MediaRecorder.isTypeSupported(t)) return t;
+    }
+    return "";
+  }
+
+  async function startRecording(e) {
+    e.preventDefault();
+    if (isBusy || (mediaRecorder && mediaRecorder.state === "recording")) return;
+
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({
+        audio: {
+          echoCancellation: true,
+          noiseSuppression: true,
+          sampleRate: 16000,
+        }
+      });
+      audioChunks = [];
+      const mimeType = getBestMimeType();
+      const options = mimeType ? { mimeType } : {};
+      mediaRecorder = new MediaRecorder(stream, options);
+      // Collect data every 250ms to avoid empty chunks
+      mediaRecorder.ondataavailable = (ev) => { if (ev.data.size > 0) audioChunks.push(ev.data); };
+      mediaRecorder.onstop = sendVoice;
+      mediaRecorder.start(250);
+      micBtn.classList.add("recording");
+      setStatus("🔴 Recording… release to send");
+      console.log("[Mic] Recording with mimeType:", mediaRecorder.mimeType);
+    } catch (err) {
+      console.error("[Mic] Error:", err);
+      setStatus("Microphone access denied. Please allow microphone permissions in your browser.");
+    }
+  }
+
+  function stopRecording() {
+    if (mediaRecorder && mediaRecorder.state === "recording") {
+      mediaRecorder.stop();
+      mediaRecorder.stream.getTracks().forEach((t) => t.stop());
+      micBtn.classList.remove("recording");
+      setStatus("Processing audio…");
+    }
+  }
+
+  async function sendVoice() {
+    if (!audioChunks.length) { setStatus("No audio captured."); return; }
+
+    const mimeType = mediaRecorder?.mimeType || "audio/webm";
+    const ext = mimeType.includes("ogg") ? "ogg" : mimeType.includes("mp4") ? "mp4" : "webm";
+    const blob = new Blob(audioChunks, { type: mimeType });
+    console.log(`[Voice] Blob size: ${blob.size} bytes, type: ${mimeType}`);
+
+    if (blob.size < 1000) {
+      setStatus("Recording too short or silent. Please hold the button and speak clearly.");
+      return;
+    }
+
+    const form = new FormData();
+    form.append("file", blob, `recording.${ext}`);
+
+    setBusy(true);
+    showTyping();
+
+    try {
+      const res = await fetch(`/voice/call?session_id=${SESSION_ID}`, {
+        method: "POST",
+        body: form,
+      });
+
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        throw new Error(err.detail || `HTTP ${res.status}`);
+      }
+
+      const data = await res.json();
+      hideTyping();
+
+      addMessage(data.input_text, "user", { voice: true });
+      addMessage(data.response, "agent", {
+        intent: data.intent,
+        escalate: data.escalate,
+        turn: data.turn,
+      });
+
+      if (data.audio_base64) playAudio(data.audio_base64);
+      setStatus("Ready");
+    } catch (e) {
+      hideTyping();
+      addMessage(`Voice error: ${e.message}`, "agent");
+      setStatus("Voice processing failed");
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  // ── Reset ──────────────────────────────────────────────────────────────────
+  async function resetSession() {
+    await fetch("/session/reset", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ session_id: SESSION_ID }),
+    }).catch(() => {});
+
+    // Clear all messages except typing indicator
+    [...chatWindow.querySelectorAll(".msg-row")].forEach((el) => el.remove());
+    audioEl.style.display = "none";
+    setStatus("New call started.");
+
+    // Re-greet
+    await sendGreeting();
+  }
+
+  // ── Summary ────────────────────────────────────────────────────────────────
+  async function fetchSummary() {
+    try {
+      const res  = await fetch(`/session/summary?session_id=${SESSION_ID}`);
+      const data = await res.json();
+      addMessage(data.summary, "agent");
+    } catch {
+      addMessage("Could not fetch summary.", "agent");
+    }
+  }
+
+  // ── Enter key ──────────────────────────────────────────────────────────────
+  textInput.addEventListener("keydown", (e) => {
+    if (e.key === "Enter" && !e.shiftKey) sendText();
+  });
+
+  // ── Health check + initial greeting ───────────────────────────────────────
+  async function init() {
+    try {
+      const res  = await fetch("/health");
+      const data = await res.json();
+      const features = [];
+      if (data.whisper_stt) features.push("STT");
+      if (data.gtts_tts)    features.push("TTS");
+      onlineStatus.textContent = features.length
+        ? `Online · ${features.join(" + ")} enabled`
+        : "Online · Text only";
+    } catch {
+      onlineStatus.textContent = "Offline — server not reachable";
+      document.querySelector(".dot").style.background = "#ef4444";
+      return;
+    }
+    await sendGreeting();
+  }
+
+  async function sendGreeting() {
+    setBusy(true);
+    showTyping();
+    try {
+      const res = await fetch("/chat", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ text: "hello", session_id: SESSION_ID }),
+      });
+      const data = await res.json();
+      hideTyping();
+      addMessage(data.response, "agent");
+      await speakText(data.response);
+    } catch {
+      hideTyping();
+      addMessage("Hello! How can I help you today?", "agent");
+    } finally {
+      setBusy(false);
+      textInput.focus();
+    }
+  }
+
+  window.addEventListener("load", init);
+</script>
+</body>
+</html>

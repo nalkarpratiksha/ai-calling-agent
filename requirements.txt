@@ -1,0 +1,20 @@
+# ── Core API ──────────────────────────────────────────────────────────────────
+fastapi>=0.110.0
+uvicorn[standard]>=0.29.0
+pydantic>=2.0.0
+python-multipart>=0.0.9
+
+# ── Voice ─────────────────────────────────────────────────────────────────────
+openai-whisper>=20231117      # Speech-to-Text (Whisper tiny ~150MB)
+gtts>=2.5.0                   # Text-to-Speech (Google TTS, free)
+
+# ── LLM: Option A — OpenAI API (recommended, fast, no GPU) ───────────────────
+# Set env var: OPENAI_API_KEY=sk-...
+openai>=1.0.0
+
+# ── LLM: Option B — Local TinyLlama (offline, ~1GB RAM, no API key needed) ───
+# Uncomment the lines below to enable local LLM mode:
+ torch>=2.0.0
+ transformers>=4.40.0
+ accelerate>=0.27.0
+ huggingface-hub>=0.22.0

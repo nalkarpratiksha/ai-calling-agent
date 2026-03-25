@@ -1,0 +1,32 @@
+{
+  "orders": {
+    "12345": { "status": "Out for delivery", "eta": "Today by 6 PM" },
+    "67890": { "status": "Processing",       "eta": "2-3 business days" },
+    "11111": { "status": "Delivered",        "eta": "Delivered on March 20" },
+    "99999": { "status": "Cancelled",        "eta": "Refund within 3-5 business days" },
+    "55555": { "status": "Shipped",          "eta": "Tomorrow by 8 PM" },
+    "33333": { "status": "Pending payment",  "eta": "Awaiting payment confirmation" }
+  },
+  "faqs": {
+    "refund":        "Refunds are processed within 3-5 business days to your original payment method. You will receive a confirmation email once initiated.",
+    "return":        "You can return items within 30 days of purchase. Items must be unused and in original packaging. Visit our website to initiate a return.",
+    "return policy": "You can return items within 30 days of purchase. Items must be unused and in original packaging.",
+    "exchange":      "Exchanges are allowed within 15 days of purchase. The item must be in its original condition.",
+    "cancel":        "You can cancel your order within 1 hour of placing it. After that, please wait for delivery and initiate a return.",
+    "shipping":      "Standard shipping takes 3-5 business days. Express shipping takes 1-2 business days. Free shipping on orders above $50.",
+    "contact":       "You can reach our support team at support@company.com or call 1-800-123-4567, available Monday to Friday, 9 AM to 6 PM.",
+    "hours":         "Our support team is available Monday to Friday, 9 AM to 6 PM IST. We are closed on public holidays.",
+    "payment":       "We accept Visa, Mastercard, American Express, UPI, Net Banking, and Cash on Delivery.",
+    "track":         "You can track your order on our website using your order ID, or ask me here by sharing your order number.",
+    "warranty":      "Most products come with a 1-year manufacturer warranty. Electronics carry a 2-year warranty.",
+    "discount":      "You can apply discount codes at checkout. Codes cannot be combined. Check our website for current offers.",
+    "account":       "You can manage your account, orders, and preferences by logging in at our website.",
+    "product":       "We carry a wide range of products. You can browse our full catalog on the website or ask me about a specific item."
+  },
+  "policies": {
+    "greeting":            "Hello! Thank you for calling customer support. I'm your AI assistant. How can I help you today?",
+    "fallback":            "I'm sorry, I didn't quite understand that. Could you please rephrase your question? I'm here to help.",
+    "escalation_message":  "I understand your concern. Let me connect you with a human agent for further assistance. Please hold — someone will be with you shortly.",
+    "closing":             "Thank you for contacting us. Have a great day! Feel free to call back anytime if you need further help."
+  }
+}
